@@ -5,6 +5,11 @@ jQuery?.fn.render = (models, directives) ->
 @Transparency    = Transparency = {}
 module?.exports  = Transparency
 
+# Simple duck typing test for dom elements
+isDomElement = (ob) ->
+  ob?.nodeName and ob.nodeType in [Node.ELEMENT_NODE, Node.TEXT_NODE]
+
+
 Transparency.render = (contexts, models, directives) ->
   return unless contexts
   models     ||= []
@@ -67,12 +72,16 @@ prepareContext = (context, models) ->
       (e.setAttribute attr, value) for attr, value of e.transparency.attributes
 
 renderValues = (instance, model) ->
-  if typeof model == 'object'
+  if isDomElement model
+    element = matchingElements(instance, 'listElement')[0] || instance.elements[0]
+    setDom(element, model) if element
+  else if typeof model == 'object'
     for key, value of model when (typeof value != 'object' && typeof value != 'function')
       setText(element, value) for element in matchingElements(instance, key)
   else
     element = matchingElements(instance, 'listElement')[0] || instance.elements[0]
     setText(element, model) if element
+
 
 renderDirectives = (instance, model, directives, index) ->
   for key, directiveFunction of directives when typeof directiveFunction == 'function'
@@ -103,6 +112,7 @@ setContent = (callback) ->
     callback e, content
     (e.appendChild c) for c in e.transparency.children
 
+setDom = setContent (e, dom) -> e.appendChild dom
 setHtml = setContent (e, html) -> e.innerHTML = html
 setText = setContent (e, text) ->
   if e.nodeName.toLowerCase() == 'input'
